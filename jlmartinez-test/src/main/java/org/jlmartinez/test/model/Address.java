@@ -4,11 +4,13 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -23,21 +25,28 @@ public class Address extends AuditModel{
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(generator = "address_generator")
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	/*@GeneratedValue(generator = "address_generator")
 	@SequenceGenerator(
 			name = "address_generator",
 			sequenceName = "address_sequence",
 			initialValue = 0
-			)
+			)*/
 	private int id;
+	
+	@NotNull
 	@Column
 	private String street;
+	@NotNull
 	@Column
 	private String state;
+	@NotNull
 	@Column
 	private String city;
+	@NotNull
 	@Column
 	private String country;
+	@NotNull
 	@Column
 	private String zip;
 

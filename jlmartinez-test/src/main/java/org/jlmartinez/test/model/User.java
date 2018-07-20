@@ -5,8 +5,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -16,8 +16,6 @@ import javax.validation.constraints.Size;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "users")
@@ -29,6 +27,7 @@ public class User extends AuditModel{
 	private static final long serialVersionUID = 1L;
 	
 	@Id
+	// @GeneratedValue(strategy = GenerationType.AUTO)
 	@GeneratedValue(generator = "user_generator")
     @SequenceGenerator(
             name = "user_generator",
@@ -36,6 +35,8 @@ public class User extends AuditModel{
             initialValue = 0
     )
 	private int id;
+	
+	@NotNull
 	@Column
 	private String name;
 	
@@ -49,6 +50,7 @@ public class User extends AuditModel{
 	@Column
 	private String birthDate;
 	
+	@NotNull
 	@OneToOne(fetch = FetchType.LAZY,
 			optional = false,
 			cascade = CascadeType.ALL,
