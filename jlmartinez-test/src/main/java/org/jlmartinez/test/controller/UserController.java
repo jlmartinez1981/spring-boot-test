@@ -2,12 +2,12 @@ package org.jlmartinez.test.controller;
 
 import javax.validation.Valid;
 
-import org.aspectj.weaver.patterns.TypePatternQuestions.Question;
 import org.jlmartinez.test.model.User;
 import org.jlmartinez.test.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 // https://www.callicoder.com/spring-boot-rest-api-tutorial-with-mysql-jpa-hibernate/
 // https://www.callicoder.com/spring-boot-jpa-hibernate-postgresql-restful-crud-api-example/
 // https://github.com/callicoder/spring-boot-mysql-rest-api-tutorial
+// https://www.concretepage.com/spring-boot/spring-boot-rest-example
 @RestController
 public class UserController {
 
