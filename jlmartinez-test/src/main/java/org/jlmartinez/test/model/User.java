@@ -7,8 +7,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
@@ -27,14 +27,8 @@ public class User extends AuditModel{
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	// @GeneratedValue(strategy = GenerationType.AUTO)
-	@GeneratedValue(generator = "user_generator")
-    @SequenceGenerator(
-            name = "user_generator",
-            sequenceName = "user_sequence",
-            initialValue = 0
-    )
-	private int id;
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Integer id;
 	
 	@NotNull
 	@Column
@@ -53,16 +47,15 @@ public class User extends AuditModel{
 	@NotNull
 	@OneToOne(fetch = FetchType.LAZY,
 			optional = false,
-			cascade = CascadeType.ALL,
-			mappedBy = "user")
+			cascade = CascadeType.ALL)
+	@JoinColumn(name = "address_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    //@JsonIgnore
 	private Address address;
 	
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 	public String getName() {

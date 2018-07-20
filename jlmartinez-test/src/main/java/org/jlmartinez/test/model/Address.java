@@ -2,17 +2,11 @@ package org.jlmartinez.test.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 @Entity
@@ -26,13 +20,7 @@ public class Address extends AuditModel{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	/*@GeneratedValue(generator = "address_generator")
-	@SequenceGenerator(
-			name = "address_generator",
-			sequenceName = "address_sequence",
-			initialValue = 0
-			)*/
-	private int id;
+	private Integer id;
 	
 	@NotNull
 	@Column
@@ -50,22 +38,10 @@ public class Address extends AuditModel{
 	@Column
 	private String zip;
 
-	@OneToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "user_id", nullable = false)
-	@JsonIgnore
-	private User user;
-
-	public User getUser() {
-		return user;
-	}
-	public void setUser(User user) {
-		this.user = user;
-	}
-	
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 	public String getStreet() {

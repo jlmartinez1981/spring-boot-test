@@ -1,88 +1,130 @@
 package org.jlmartinez.test.controller;
 
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.validation.Valid;
 
+import org.jlmartinez.test.controller.response.AddressTO;
+import org.jlmartinez.test.controller.response.UserTO;
 import org.jlmartinez.test.model.User;
 import org.jlmartinez.test.repository.UsersRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-// https://www.callicoder.com/spring-boot-rest-api-tutorial-with-mysql-jpa-hibernate/
-// https://www.callicoder.com/spring-boot-jpa-hibernate-postgresql-restful-crud-api-example/
-// https://github.com/callicoder/spring-boot-mysql-rest-api-tutorial
-// https://www.concretepage.com/spring-boot/spring-boot-rest-example
 @RestController
 public class UserController {
-	
+
 	@Autowired
-	private UsersRepository usersRepository;
-
-	/*
-	@GetMapping("/users")
-	public Page<User> getUsers(Pageable pageable) {
-		/*
-	 * List<User> users = usersRepository.findAll();
-		users.forEach(u -> System.out.println("AddressID: " + u.getAddress().getId()));
-	 *//*
-		return usersRepository.findAll(pageable);
-	}*/
+	private UsersRepository userRepository;
 
 	@GetMapping("/users")
-	public ResponseEntity<List<User>> getUsers() {
+	public ResponseEntity<List<UserTO>> getUsers() {
 
-		List<User> users = usersRepository.findAll();
-		//users.forEach(u -> System.out.println("AddressID: " + u.getAddress().getId()));
-
-		return new ResponseEntity<List<User>>(users, HttpStatus.OK);
+		List<UserTO> userResult = new ArrayList<UserTO>();
+		List<User> users = userRepository.findAll();
+		users.forEach((u) -> {
+			UserTO uResp = this.createUserResponse(u);
+			userResult.add(uResp);
+		});
+		return new ResponseEntity<List<UserTO>>(userResult, HttpStatus.OK);
 	}
 
 	@PostMapping("/users")
 	public ResponseEntity<User> createUsers(@Valid @RequestBody User user, BindingResult bindingResult) {
-		
+
 		if (bindingResult.hasErrors()){
-	        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
-	    }
+			return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
+		}
 
-		User result = usersRepository.save(user);
-		/*URI location = ServletUriComponentsBuilder
-				.fromCurrentRequest()
-				.path("/{id}")
-				.buildAndExpand(result.getId())
-				.toUri();
-		*/
-		return new ResponseEntity<User>(result, HttpStatus.CREATED);
+		try {
+			User result = userRepository.save(user);
+			return new ResponseEntity<User>(result, HttpStatus.CREATED);
+
+		}catch(Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	@GetMapping("/users/{userId}")
+	public ResponseEntity<Object> getUser(@PathVariable int userId) {
+		if(!this.isValidUserId(userId)) {
+			return ResponseEntity.status(400).build();
+		}
+		try {
+			return userRepository.findById(userId)
+					.map(user -> {
+						UserTO uResp = this.createUserResponse(user);
+						return new ResponseEntity<Object>(uResp, HttpStatus.OK);
+					}).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
-	/*
 	@PutMapping("/users/{userId}")
-	public User updateQuestion(@PathVariable int userId,
+	public ResponseEntity<UserTO> updateQuestion(@PathVariable int userId,
 			@Valid @RequestBody User userRequest) {
-		return usersRepository.findById(userId)
-				.map(user -> {
-					user.setTitle(userRequest.getTitle());
-					user.setDescription(userRequest.getDescription());
-					return userRepository.save(user);
-				}).orElseThrow(() -> new ResourceNotFoundException("Question not found with id " + questionId));
+
+		if(!this.isValidUserId(userId)) {
+			return ResponseEntity.status(400).build();
+		}
+
+		Optional<User> searchResult = userRepository.findById(userId);
+		if(searchResult.isPresent()) {
+			User user = searchResult.get();
+			user.setAddress(userRequest.getAddress());
+			user.setBirthDate(userRequest.getBirthDate());
+			user.setEmail(userRequest.getEmail());
+			user.setName(userRequest.getName());
+
+			User result = userRepository.save(user);
+			UserTO uResp = this.createUserResponse(result);
+			return new ResponseEntity<UserTO>(uResp, HttpStatus.OK);
+		}else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
 	}
 
-	@DeleteMapping("/questions/{questionId}")
-	public ResponseEntity<?> deleteQuestion(@PathVariable Long questionId) {
-		return usersRepository.findById(questionId)
-				.map(question -> {
-					questionRepository.delete(question);
-					return ResponseEntity.ok().build();
-				}).orElseThrow(() -> new ResourceNotFoundException("Question not found with id " + questionId));
+	@DeleteMapping("/users/{userId}")
+	public ResponseEntity<Object> deleteQuestion(@PathVariable int userId) {
+		if(!this.isValidUserId(userId)) {
+			return ResponseEntity.status(400).build();
+		}
+
+		try {
+			return userRepository.findById(userId)
+					.map(user -> {
+						userRepository.delete(user);
+						return ResponseEntity.ok().build();
+					}).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
-	 */
+
+	private boolean isValidUserId(int userId) {
+		return userId >= 0;
+	}
+
+	private UserTO createUserResponse(User u) {
+		AddressTO addrResp = new AddressTO();
+		BeanUtils.copyProperties(u.getAddress(), addrResp);
+
+		UserTO uResp = new UserTO();
+		BeanUtils.copyProperties(u, uResp);
+		uResp.setAddress(addrResp);
+		return uResp;
+	}
 }

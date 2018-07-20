@@ -1,7 +1,14 @@
 package org.jlmartinez.test.controller;
 
-import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
@@ -13,6 +20,7 @@ import org.jlmartinez.test.JlmartinezTestApplication;
 import org.jlmartinez.test.model.Address;
 import org.jlmartinez.test.model.User;
 import org.jlmartinez.test.repository.UsersRepository;
+import org.jlmartinez.test.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,13 +35,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 
-/**
- * @author Josh Long
- */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = JlmartinezTestApplication.class)
 @WebAppConfiguration
-public class RestControllerTest2 {
+public class RestControllerTest {
 
 
     private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
@@ -47,7 +52,10 @@ public class RestControllerTest2 {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
-
+    
+    @Autowired
+    private UsersRepository userRepository;
+    
     @Autowired
     void setConverters(HttpMessageConverter<?>[] converters) {
 
@@ -63,47 +71,189 @@ public class RestControllerTest2 {
     @Before
     public void setup() throws Exception {
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
-
-        //this.userRepository.deleteAllInBatch();
- 
-        /*
-        this.account = accountRepository.save(new Account(userName, "password"));
-        this.bookmarkList.add(userRepository.save(new Bookmark(account, "http://bookmark.com/1/" + userName, "A description")));
-        this.bookmarkList.add(userRepository.save(new Bookmark(account, "http://bookmark.com/2/" + userName, "A description")));
-        */
+        this.userRepository.deleteAllInBatch();
     }
 
-    /*
+    
     @Test
     public void userNotFound() throws Exception {
-        mockMvc.perform(post("/george/bookmarks/")
-                .content(this.json(new Bookmark(null, null, null)))
+        mockMvc.perform(get("/users/0")
                 .contentType(contentType))
                 .andExpect(status().isNotFound());
     }
-	*/
+    
     @Test
-    public void createUserPost() throws Exception {
+    public void userFound() throws Exception {
     	
-    	Address address = new Address();
-    	address.setCity("CS");
-    	address.setCountry("ES");
-    	address.setState("CV");
-    	address.setZip("12001");
-    	
-    	User user = new User();
-    	user.setBirthDate("01-01-1981");
-    	user.setEmail("pepe@gmail.com");
-    	user.setName("pepe");
-    	user.setAddress(address);
+    	Address address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Rey D.", "12001");
+  
+    	User user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
     	
     	String msgContent = this.json(user); 
         mockMvc.perform(post("/users")
                 .content(msgContent)
                 .contentType(contentType))
                 .andExpect(status().isCreated());
+        
+        mockMvc.perform(get("/users/1")
+                .contentType(contentType))
+                .andExpect(status().isOk());
+    }
+    
+    @Test
+    public void invalidUserId() throws Exception {
+    	
+        mockMvc.perform(get("/users/-1")
+                .contentType(contentType))
+                .andExpect(status().is(400));
     }
 
+    @Test
+    public void getUsers() throws Exception {
+    	
+    	Address address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Rey D.", "12001");
+  
+    	User user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
+    	
+    	String msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isCreated());
+        
+        address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Street2", "12002");
+  
+    	user = TestUtils.createMockUser("paco", "paco@gmail.com",
+    			"01-01-1982", address);
+    	
+    	msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isCreated());
+    	
+        mockMvc.perform(get("/users"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(contentType))
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+    
+    @Test
+    public void createUserPost() throws Exception {
+    	
+    	Address address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Rey D.", "12001");
+  
+    	User user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
+    	
+    	String msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isCreated());
+    	
+        // User without birth date should fail validation
+        user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			null, address);
+        
+    	msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().is4xxClientError());
+        
+        //Address without city should fail when committing
+        address = TestUtils.createMockAddress(null, "ES", "CV",
+    			"Rey D.", "12001");
+    	user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
+    	
+    	msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isInternalServerError());
+    }
+    
+    @Test
+    public void updateUser() throws Exception {
+    	
+    	 Address address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Rey D.", "12001");
+  
+    	User user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
+    	
+    	String msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isCreated());
+    	
+        user = TestUtils.createMockUser("pepe2", "pepe@gmail.com",
+    			"01-01-1981", address);
+        msgContent = this.json(user);
+        mockMvc.perform(put("/users/1")
+        		.content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(contentType))
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("pepe2")));
+        
+        // UserId Not found
+        mockMvc.perform(put("/users/4")
+        		.content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isNotFound());
+        
+        // Invalid userId
+        mockMvc.perform(put("/users/-1")
+        		.content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().is(400));
+    }
+    
+    @Test
+    public void deleteUser() throws Exception {
+    	
+    	 Address address = TestUtils.createMockAddress("CS", "ES", "CV",
+    			"Rey D.", "12001");
+  
+    	User user = TestUtils.createMockUser("pepe", "pepe@gmail.com",
+    			"01-01-1981", address);
+    	
+    	String msgContent = this.json(user); 
+        mockMvc.perform(post("/users")
+                .content(msgContent)
+                .contentType(contentType))
+                .andExpect(status().isCreated());
+    	
+        mockMvc.perform(delete("/users/1")
+                .contentType(contentType))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(contentType))
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("pepe2")));
+        
+        // UserId Not found
+        mockMvc.perform(delete("/users/4")
+                .contentType(contentType))
+                .andExpect(status().isNotFound());
+        
+        // Invalid userId
+        mockMvc.perform(put("/users/-1")
+                .contentType(contentType))
+                .andExpect(status().is(400));
+    }
+    
     /*
     @Test
     public void readSingleBookmark() throws Exception {
@@ -114,34 +264,8 @@ public class RestControllerTest2 {
                 .andExpect(jsonPath("$.uri", is("http://bookmark.com/1/" + userName)))
                 .andExpect(jsonPath("$.description", is("A description")));
     }
-	
-    @Test
-    public void readBookmarks() throws Exception {
-        mockMvc.perform(get("/bookmarks/" + userName))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(contentType))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id", is(this.bookmarkList.get(0).getId().intValue())))
-                .andExpect(jsonPath("$[0].uri", is("http://bookmark.com/1/" + userName)))
-                .andExpect(jsonPath("$[0].description", is("A description")))
-                .andExpect(jsonPath("$[1].id", is(this.bookmarkList.get(1).getId().intValue())))
-                .andExpect(jsonPath("$[1].uri", is("http://bookmark.com/2/" + userName)))
-                .andExpect(jsonPath("$[1].description", is("A description")));
-    }
-
-    @Test
-    public void createBookmark() throws Exception {
-        String bookmarkJson = json(new Bookmark(
-                this.account, "http://spring.io", "a bookmark to the best resource for Spring news and information"));
-
-        this.mockMvc.perform(post("/bookmarks/" + userName)
-                .contentType(contentType)
-                .content(bookmarkJson))
-                .andExpect(status().isCreated());
-    }
 	*/
-    protected String json(Object o) throws IOException {
+    private String json(Object o) throws IOException {
         MockHttpOutputMessage mockHttpOutputMessage = new MockHttpOutputMessage();
         this.mappingJackson2HttpMessageConverter.write(
                 o, MediaType.APPLICATION_JSON, mockHttpOutputMessage);
