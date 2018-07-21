@@ -1,5 +1,7 @@
 package org.jlmartinez.test.model;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -9,6 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
@@ -27,7 +30,13 @@ public class User extends AuditModel{
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	//@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="user_generator")
+	@SequenceGenerator(
+            name = "user_generator",
+            sequenceName = "user_sequence",
+            initialValue = 100, allocationSize = 1
+    )
 	private Integer id;
 	
 	@NotNull
@@ -42,7 +51,7 @@ public class User extends AuditModel{
 	
 	@NotNull
 	@Column
-	private String birthDate;
+	private LocalDateTime birthDate;
 	
 	@NotNull
 	@OneToOne(fetch = FetchType.LAZY,
@@ -70,10 +79,10 @@ public class User extends AuditModel{
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	public String getBirthDate() {
+	public LocalDateTime getBirthDate() {
 		return birthDate;
 	}
-	public void setBirthDate(String birthDate) {
+	public void setBirthDate(LocalDateTime birthDate) {
 		this.birthDate = birthDate;
 	}
 	

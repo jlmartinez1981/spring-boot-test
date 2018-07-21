@@ -20,7 +20,7 @@ public class TestUtils {
 		return new AddressTO(city, country, state, street, zip);
 	}
 	
-	public static User createMockUser(String name, String email, String birthDate,
+	public static User createMockUser(String name, String email, LocalDateTime birthDate,
 			Address address) {
 		User mockUser = new User();
 		mockUser.setName(name);

@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -19,8 +20,14 @@ public class Address extends AuditModel{
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	private Integer id;
+	//@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.SEQUENCE,generator = "address_generator")
+	@SequenceGenerator(
+			name = "address_generator",
+			sequenceName = "address_sequence",
+			initialValue = 100, allocationSize = 1
+			)
+	private int id;
 	
 	@NotNull
 	@Column

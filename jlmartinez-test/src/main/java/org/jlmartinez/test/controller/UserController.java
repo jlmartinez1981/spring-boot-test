@@ -1,18 +1,23 @@
 package org.jlmartinez.test.controller;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 
 import org.jlmartinez.test.controller.response.AddressTO;
 import org.jlmartinez.test.controller.response.UserTO;
 import org.jlmartinez.test.model.User;
 import org.jlmartinez.test.repository.UsersRepository;
+import org.jlmartinez.test.utils.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,13 +28,28 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
+@Api(value="jlmartinez CloudAppi")
 @RestController
 public class UserController {
-
+	
+	private DateTimeFormatter formatter;
+	
+	@Value("${date.formatter.pattern}")
+	private String formatterPattern;
+	
 	@Autowired
 	private UsersRepository userRepository;
 
-	@GetMapping("/users")
+	@PostConstruct
+	private void init() {
+		formatter = DateTimeFormatter.ofPattern(formatterPattern);
+	}
+	
+	@ApiOperation(value = "List of users")
+	@GetMapping(path = "/users", produces= {MediaType.APPLICATION_JSON_UTF8_VALUE})
 	public ResponseEntity<List<UserTO>> getUsers() {
 
 		List<UserTO> userResult = new ArrayList<UserTO>();
@@ -41,10 +61,15 @@ public class UserController {
 		return new ResponseEntity<List<UserTO>>(userResult, HttpStatus.OK);
 	}
 
-	@PostMapping("/users")
+	@ApiOperation(value = "Create user")
+	@PostMapping(path = "/users", produces= {MediaType.APPLICATION_JSON_UTF8_VALUE},
+	consumes = {MediaType.APPLICATION_JSON_UTF8_VALUE})
 	public ResponseEntity<User> createUsers(@Valid @RequestBody User user, BindingResult bindingResult) {
 
 		if (bindingResult.hasErrors()){
+			bindingResult.getAllErrors().forEach(error -> {
+				System.out.println("Binding Error: " + error.getDefaultMessage());
+			});
 			return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
 		}
 
@@ -57,7 +82,8 @@ public class UserController {
 		}
 	}
 	
-	@GetMapping("/users/{userId}")
+	@ApiOperation(value = "Get one user", response = UserTO.class)
+	@GetMapping(path = "/users/{userId}", produces= {MediaType.APPLICATION_JSON_UTF8_VALUE})
 	public ResponseEntity<Object> getUser(@PathVariable int userId) {
 		if(!this.isValidUserId(userId)) {
 			return ResponseEntity.status(400).build();
@@ -73,8 +99,9 @@ public class UserController {
 		}
 	}
 
-	@PutMapping("/users/{userId}")
-	public ResponseEntity<UserTO> updateQuestion(@PathVariable int userId,
+	@PutMapping(path = "/users/{userId}", produces= {MediaType.APPLICATION_JSON_UTF8_VALUE},
+			consumes= {MediaType.APPLICATION_JSON_UTF8_VALUE})
+	public ResponseEntity<UserTO> updateUser(@PathVariable int userId,
 			@Valid @RequestBody User userRequest) {
 
 		if(!this.isValidUserId(userId)) {
@@ -97,8 +124,8 @@ public class UserController {
 		}
 	}
 
-	@DeleteMapping("/users/{userId}")
-	public ResponseEntity<Object> deleteQuestion(@PathVariable int userId) {
+	@DeleteMapping(path = "/users/{userId}", produces= {MediaType.APPLICATION_JSON_UTF8_VALUE})
+	public ResponseEntity<Object> deleteUser(@PathVariable int userId) {
 		if(!this.isValidUserId(userId)) {
 			return ResponseEntity.status(400).build();
 		}
@@ -125,6 +152,7 @@ public class UserController {
 		UserTO uResp = new UserTO();
 		BeanUtils.copyProperties(u, uResp);
 		uResp.setAddress(addrResp);
+		uResp.setBirthDate(DateUtils.localDateTimeToString(u.getBirthDate(), formatter));
 		return uResp;
 	}
 }
